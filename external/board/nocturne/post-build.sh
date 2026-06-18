@@ -15,3 +15,10 @@ sed -i "s|\${VERSION}|${version}|g" "$TARGET_DIR"/etc/motd
 sed -i "s|\${GIT_HASH}|${git_hash}|g" "$TARGET_DIR"/etc/motd
 
 sed -i "s|\${NOCTURNE_VERSION}|${version}|g" "$TARGET_DIR"/etc/fastfetch/config.jsonc
+
+# BirdThing: ensure root's baked SSH key has dropbear-acceptable ownership/perms
+if [ -f "$TARGET_DIR"/root/.ssh/authorized_keys ]; then
+  chown -R 0:0 "$TARGET_DIR"/root/.ssh
+  chmod 700 "$TARGET_DIR"/root/.ssh
+  chmod 600 "$TARGET_DIR"/root/.ssh/authorized_keys
+fi
