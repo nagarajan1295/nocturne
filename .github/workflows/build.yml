@@ -1,0 +1,72 @@
+name: Build BirdThing image
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [birdthing]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    steps:
+      - name: Free up disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
+      - name: Checkout (with buildroot submodule)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential bc bison flex libssl-dev \
+            libncurses-dev unzip rsync cpio file wget curl git zip \
+            python3 python-is-python3 e2fsprogs util-linux ca-certificates
+          # Nocturne's build.sh defaults HOSTCC=/usr/bin/gcc-15
+          if ! sudo apt-get install -y gcc-15 g++-15; then
+            sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+            sudo apt-get update
+            sudo apt-get install -y gcc-15 g++-15
+          fi
+          gcc-15 --version
+
+      - name: Fetch stock blobs (loop-mounts stock firmware)
+        run: |
+          chmod +x external/package/stock-blobs/fetch-stock.sh
+          sudo ./external/package/stock-blobs/fetch-stock.sh
+          ls -la dl/stock-blobs/
+
+      - name: Build image + package
+        env:
+          HOSTCC: /usr/bin/gcc-15
+          HOSTCXX: /usr/bin/g++-15
+          FORCE_UNSAFE_CONFIGURE: "1"
+        run: |
+          chmod +x scripts/build.sh scripts/package.sh
+          ./scripts/build.sh package
+
+      - name: Show output
+        if: always()
+        run: |
+          echo "=== output/images ==="; ls -la output/images/ 2>/dev/null || true
+          echo "=== output/package ==="; ls -la output/package/ 2>/dev/null || true
+
+      - name: Upload flashable package
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: birdthing-flashable-zip
+          path: output/package/*.zip
+          if-no-files-found: error
+
+      # On failure, read the live job log in the Actions console — uploading the
+      # full output/build tree would be multiple GB.

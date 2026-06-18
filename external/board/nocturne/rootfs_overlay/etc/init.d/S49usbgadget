@@ -46,8 +46,9 @@ case "$1" in
     printToKmsg "Configuring usb0"
     sleep 3s
     ifconfig usb0 up
-    ifconfig usb0 172.16.42.2 netmask 255.255.255.0 broadcast 172.16.42.255
-    ip route add default via 172.16.42.1 dev usb0
+    # BirdThing: match the Pi's existing usb0 host side (192.168.7.1); CT = .2
+    ifconfig usb0 192.168.7.2 netmask 255.255.255.0 broadcast 192.168.7.255
+    ip route add default via 192.168.7.1 dev usb0
 
     printToKmsg "USB done"
     ;;
