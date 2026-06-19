@@ -13,7 +13,12 @@
 # Pure stdlib + libasound via ctypes (no arecord/amixer on the device).
 import ctypes, socket, time, array, os
 
-PI_HOST   = os.environ.get("BIRD_PI_HOST", "192.168.7.1")
+# Pi receiver address. Prefer the Bluetooth-PAN link (192.168.44.1), fall back
+# to USB (192.168.7.1). BIRD_PI_HOST overrides with a single fixed host.
+if os.environ.get("BIRD_PI_HOST"):
+    PI_HOSTS = [os.environ["BIRD_PI_HOST"]]
+else:
+    PI_HOSTS = ["192.168.44.1", "192.168.7.1"]
 PI_PORT   = int(os.environ.get("BIRD_PI_PORT", "9000"))
 RATE      = 48000
 N         = 2048      # frames per read
@@ -60,13 +65,15 @@ def open_pcm():
 
 def connect_pi():
     while True:
-        try:
-            s = socket.create_connection((PI_HOST, PI_PORT), timeout=10)
-            s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            print("[birdmic] connected to %s:%d" % (PI_HOST, PI_PORT), flush=True)
-            return s
-        except OSError:
-            time.sleep(3)
+        for host in PI_HOSTS:
+            try:
+                s = socket.create_connection((host, PI_PORT), timeout=5)
+                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                print("[birdmic] connected to %s:%d" % (host, PI_PORT), flush=True)
+                return s
+            except OSError:
+                continue
+        time.sleep(3)
 
 
 def main():
