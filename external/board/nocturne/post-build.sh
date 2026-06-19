@@ -16,9 +16,10 @@ sed -i "s|\${GIT_HASH}|${git_hash}|g" "$TARGET_DIR"/etc/motd
 
 sed -i "s|\${NOCTURNE_VERSION}|${version}|g" "$TARGET_DIR"/etc/fastfetch/config.jsonc
 
-# BirdThing: ensure root's baked SSH key has dropbear-acceptable ownership/perms
+# BirdThing: dropbear-acceptable perms on root's baked SSH key.
+# (No chown: post-build runs unprivileged; Buildroot's fakeroot image step
+# makes target files root:root anyway.)
 if [ -f "$TARGET_DIR"/root/.ssh/authorized_keys ]; then
-  chown -R 0:0 "$TARGET_DIR"/root/.ssh
   chmod 700 "$TARGET_DIR"/root/.ssh
   chmod 600 "$TARGET_DIR"/root/.ssh/authorized_keys
 fi
