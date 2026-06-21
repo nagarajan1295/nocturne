@@ -23,3 +23,10 @@ if [ -f "$TARGET_DIR"/root/.ssh/authorized_keys ]; then
   chmod 700 "$TARGET_DIR"/root/.ssh
   chmod 600 "$TARGET_DIR"/root/.ssh/authorized_keys
 fi
+
+# BirdThing: buildroot's bluez5_utils ships /etc/init.d/S40bluetoothd, which
+# starts a SECOND bluetoothd WITHOUT our PAN plugin. It grabs the org.bluez
+# D-Bus name at boot, so the supervisord bluetoothd (start-bluetoothd, with
+# --plugin=...,network) can never get on D-Bus and crash-loops -> no PAN.
+# Remove the duplicate so only the network-plugin daemon runs. See bt-pan.sh.
+rm -f "$TARGET_DIR"/etc/init.d/S40bluetoothd
