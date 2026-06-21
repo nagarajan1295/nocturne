@@ -32,13 +32,33 @@ done
 
 echo "start-chromium: dashboard reachable; launching Chromium at $APP_URL"
 
+# Flags mirror the working USB BirdThing (Debian kiosk) launcher: GPU OFF
+# (--disable-gpu) to stop the flicker the weston transform=90 rotation causes
+# with HW compositing; --force-device-scale-factor=1 so the 800x480 dashboard
+# isn't crunched/misscaled; --disable-smooth-scrolling so knob (Arrow-key)
+# scrolling isn't laggy. Panel is 800x480 after rotation, scale 1.0.
 exec "$CHROME" \
   --no-sandbox \
-  --in-process-gpu \
+  --disable-gpu \
+  --force-device-scale-factor=1 \
+  --window-size=800,480 \
+  --window-position=0,0 \
   --remote-debugging-port=2222 \
   --user-data-dir=/var/lib/chrome_storage \
   --kiosk \
+  --disable-smooth-scrolling \
   --disable-pinch \
+  --overscroll-history-navigation=0 \
+  --hide-scrollbars \
+  --disable-overlay-scrollbar \
+  --disable-features=OverlayScrollbar,TranslateUI \
+  --disable-login-animations \
+  --disable-modal-animations \
+  --noerrdialogs \
+  --no-first-run \
+  --disable-infobars \
+  --disable-translate \
+  --autoplay-policy=no-user-gesture-required \
   --allow-file-access-from-files \
   --ignore-certificate-errors \
   --enable-experimental-web-platform-features \
